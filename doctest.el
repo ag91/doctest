@@ -80,9 +80,11 @@ normalized into its `princ' form without being evaluated."
   (interactive "p")
   (cond
    ((looking-at doctest-input)
-    (let* ((input (doctest-unescape (match-string-no-properties 1)))
+    (let* ((input (doctest-unescape (string-trim (buffer-substring-no-properties
+                                                  (save-excursion (- (search-forward "(" nil t) 1))
+                                                  (save-excursion (- (search-forward (concat "\n" doctest-output) nil t) (length doctest-output)))))))
            (evaluated-input (format "%S" (eval (car (read-from-string input)))))
-           (output (and (forward-line 1) (doctest--target-output)))
+           (output (and (progn (search-forward doctest-output nil t) (not (beginning-of-line))) (doctest--target-output)))
            (output (format "%S" (car (read-from-string output)))))
       (if interactively
           (doctest--here-interactively input evaluated-input output)
@@ -159,7 +161,7 @@ Call `doctest--append' to append to the running test output."
         (and (nth 3 (syntax-ppss))       ; in a string
              (zerop (forward-line 1))    ; ...with a next line
              (nth 3 (syntax-ppss))       ; ...also in a string
-             (looking-at doctest-output) ; ...with doctest output
+             (save-excursion (search-forward doctest-output)) ; ...with doctest output
              (zerop (forward-line -1))
              (setq doctest-point (point)))))
     doctest-point))
