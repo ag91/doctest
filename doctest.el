@@ -185,5 +185,19 @@ It's open work to parse/handle backslashes cleanly, so ignore them.
   (declare (side-effect-free t) (pure t))
   (replace-regexp-in-string "\\\\\\(.\\|\n\\)" "\\1" str))
 
+(defun doctest-escape-test-strings (string)
+  "Escape any \" in STRING.
+When called interactively that would be the active region.
+
+>> (doctest-escape-test-strings \"\\\"hello\\\"\")
+=> \"\\\\\\\"hello\\\\\\\"\""
+  (interactive
+   (list (when (region-active-p)
+           (buffer-substring-no-properties
+            (caar (region-bounds))
+            (cdar (region-bounds))))))
+  (when (region-active-p) (replace-string "\"" "\\\"" nil (caar (region-bounds)) (cdar (region-bounds))))
+  (string-replace "\"" "\\\"" string))
+
 (provide 'doctest)
 ;;; doctest.el ends here
