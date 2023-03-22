@@ -120,8 +120,8 @@ This is one or many lines beginning with `doctest-output'."
        (buffer-substring-no-properties
         (+ (point) (length doctest-output))
         (or (save-excursion (and (re-search-forward doctest-input bound t) (beginning-of-line) (point)))
-            (save-excursion (ignore-errors (- (search-forward "\"\n " bound) (length "\"\n "))))
             (save-excursion (ignore-errors (- (re-search-forward "\n\n" bound) (length "\n\n"))))
+            (save-excursion (ignore-errors (- (search-forward "\"\n " bound) (length "\"\n "))))
             (save-excursion (ignore-errors (- (re-search-forward "\"" bound) 1)))))))))
 
 (defun doctest--here-interactively (sexp actual-value target-value)
