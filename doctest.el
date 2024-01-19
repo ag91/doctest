@@ -193,14 +193,26 @@ It's open work to parse/handle backslashes cleanly, so ignore them.
 When called interactively that would be the active region.
 
 >> (doctest-escape-test-strings \"\\\"hello\\\"\")
-=> \"\\\\\\\"hello\\\\\\\"\""
+=> \"\\\"\\\\\\\"hello\\\\\\\"\\\"\""
   (interactive
    (list (when (region-active-p)
            (buffer-substring-no-properties
             (caar (region-bounds))
             (cdar (region-bounds))))))
-  (when (region-active-p) (replace-string "\"" "\\\"" nil (caar (region-bounds)) (cdar (region-bounds))))
-  (string-replace "\"" "\\\"" string))
+  (let* ((begin (caar (region-bounds)))
+         (end (cdar (region-bounds)))
+         (string (if (region-active-p)
+                     (buffer-substring-no-properties
+                      begin
+                      end)
+                   string))
+         (result (prin1-to-string string)))
+    (when (region-active-p)
+      (save-excursion
+        (goto-char begin)
+        (delete-region begin end)
+        (insert (substring result 1 -1))))
+    result))
 
 (provide 'doctest)
 ;;; doctest.el ends here

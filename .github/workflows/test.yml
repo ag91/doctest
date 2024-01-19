@@ -3,16 +3,21 @@ on: [push, pull_request]
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        emacs_version:
+          # Add more lines like this if you want to test on different Emacs versions.
+          - 27.2
+
     steps:
-    # Checkout repository under $GITHUB_WORKSPACE
-    - uses: actions/checkout@v2
-    - name: Install
-      run: |
-        yes '' | sudo add-apt-repository ppa:kelleyk/emacs
-        sudo apt update
-        sudo apt install emacs25-nox
-        echo `dpkg -L emacs25-nox`
-        emacs25 --version
+    - name: Set up Emacs
+      uses: purcell/setup-emacs@master
+      with:
+        version: ${{matrix.emacs_version}}
+
+    - name: Check out the source code
+      uses: actions/checkout@v2
+
     - name: Test
       run: |
         emacs25 --batch --eval "(progn (add-to-list 'load-path \"$PWD\") (require 'doctest) (doctest \"doctest.el\"))" | grep '0 failed'
