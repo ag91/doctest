@@ -199,20 +199,19 @@ When called interactively that would be the active region.
            (buffer-substring-no-properties
             (caar (region-bounds))
             (cdar (region-bounds))))))
-  (let* ((begin (caar (region-bounds)))
-         (end (cdar (region-bounds)))
-         (string (if (region-active-p)
-                     (buffer-substring-no-properties
+  (if (region-active-p)
+      (let* ((begin (caar (region-bounds)))
+             (end (cdar (region-bounds)))
+             (string (buffer-substring-no-properties
                       begin
-                      end)
-                   string))
-         (result (prin1-to-string string)))
-    (when (region-active-p)
-      (save-excursion
-        (goto-char begin)
-        (delete-region begin end)
-        (insert (substring result 1 -1))))
-    result))
+                      end))
+             (result (prin1-to-string string)))
+        (save-excursion
+          (goto-char begin)
+          (delete-region begin end)
+          (insert (substring result 1 -1)))
+        result)
+    (prin1-to-string string)))
 
 (provide 'doctest)
 ;;; doctest.el ends here
