@@ -5,7 +5,7 @@
 ;; Keywords: lisp maint docs help
 ;; URL: https://github.com/riscy/doctest
 ;; SPDX-License-Identifier: GPL-3.0-or-later
-;; Package-Requires: ((emacs "24.3"))
+;; Package-Requires: ((emacs "28.1"))
 ;; Version: 0.0.0
 
 ;;; Commentary:
