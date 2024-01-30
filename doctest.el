@@ -142,7 +142,7 @@ Call `doctest--append' to append to the running test output."
          (setq doctest--first-failure (or doctest--first-failure (point)))
          (doctest--append (format "%s.el#%s: %s => %s but got %s"
                                   (or
-                                   (ignore-errors (file-name-base))
+                                   (ignore-errors (file-name-base (buffer-file-name)))
                                    (buffer-name))
                                   (line-number-at-pos)
                                   sexp target-value actual-value)))
