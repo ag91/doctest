@@ -46,6 +46,13 @@
 (defvar doctest--fail 0 "Number of tests that have failed.")
 (defvar doctest--pass 0 "Number of tests that have passed.")
 
+(defvar doctest-byte-compile-warn-shown-already nil "Show warn only once, if `doctest-byte-compile-warn' set.")
+
+(defcustom doctest-byte-compile-warn t
+  "Warn user that tests may cause byte compile warnings."
+  :type 'symbol
+  :group 'doctest)
+
 (defun doctest (&optional filename)
   "Run doctest on current buffer, or FILENAME if given.
 When run interactively, the point will move to the site of the
@@ -70,6 +77,16 @@ This function sends its report using `send-string-to-terminal' if
            (doctest--message (format "%s\n%s" tally doctest--text)))
           (t (doctest--message tally)))))
 
+(defun doctest-byte-compile-warn ()
+  "Alert user of doctest that test cases in comments can cause byte compiler warnings."
+  (when (and
+         doctest-byte-compile-warn
+         (not doctest-byte-compile-warn-shown-already)
+         (or byte-compile-warnings
+             (not (seq-contains-p byte-compile-warnings '(not docstrings)))))
+    (setq doctest-byte-compile-warn-shown-already t)
+    (warn "Test cases in comments can cause byte-compile warnings, please add '(not docstrings) to `byte-compile-warnings'")))
+
 (defun doctest-here (&optional interactively)
   "Run the test that the point is currently on.
 If called INTERACTIVELY, let the user know the test passed and
@@ -78,13 +95,21 @@ Internally, the doctest input line is evaluated with `eval' and
 normalized into its `princ' form, while the output line is
 normalized into its `princ' form without being evaluated."
   (interactive "p")
+  (doctest-byte-compile-warn)
   (cond
    ((looking-at doctest-input)
-    (let* ((input (doctest-unescape (string-trim (buffer-substring-no-properties
-                                                  (save-excursion (- (search-forward "(" nil t) 1))
-                                                  (save-excursion (- (search-forward (concat "\n" doctest-output) nil t) (length doctest-output)))))))
+    (let* ((input (doctest-unescape
+                   (string-trim
+                    (buffer-substring-no-properties
+                     (save-excursion (- (search-forward "(" nil t) 1))
+                     (save-excursion (- (search-forward (concat "\n" doctest-output) nil t)
+                                        (length doctest-output)))))))
            (evaluated-input (format "%S" (eval (car (read-from-string input)))))
-           (output (and (progn (search-forward doctest-output nil t) (not (beginning-of-line))) (doctest--target-output)))
+           (output (and
+                    (progn
+                      (search-forward doctest-output nil t)
+                      (not (beginning-of-line)))
+                    (doctest--target-output)))
            (output (format "%S" (car (read-from-string output)))))
       (if interactively
           (doctest--here-interactively input evaluated-input output)
@@ -121,8 +146,8 @@ This is one or many lines beginning with `doctest-output'."
         (+ (point) (length doctest-output))
         (or
          (when (string-prefix-p (concat doctest-output "(") (thing-at-point 'line 'no-prop))
-           (save-excursion (ignore-errors (search-forward ")\"" bound))))
-         (save-excursion (and (re-search-forward doctest-input bound t) (beginning-of-line) (point)))
+           (save-excursion (search-forward ")\"" bound 'no-error)))
+         (save-excursion (and (re-search-forward doctest-input bound 'no-error) (beginning-of-line) (point)))
          (save-excursion (ignore-errors (- (re-search-forward "\n\n" bound) (length "\n\n"))))
          (save-excursion (ignore-errors (- (search-forward "\"\n " bound) (length "\"\n "))))
          (save-excursion (ignore-errors (- (re-search-forward "\"" bound) 1)))))))))
@@ -215,3 +240,9 @@ When called interactively that would be the active region.
 
 (provide 'doctest)
 ;;; doctest.el ends here
+
+;;; doctest.el ends here
+
+;; Local Variables:
+;; byte-compile-warnings: (not docstrings)
+;; End:
