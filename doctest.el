@@ -3,7 +3,7 @@
 ;; Authors: Chris Rayner (dchrisrayner@gmail.com)
 ;; Created: Apr 8 2020
 ;; Keywords: lisp maint docs help
-;; URL: https://github.com/riscy/doctest
+;; URL: https://github.com/ag91/doctest
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;; Package-Requires: ((emacs "28.1"))
 ;; Version: 0.0.0
@@ -239,8 +239,6 @@ When called interactively that would be the active region.
     (prin1-to-string string)))
 
 (provide 'doctest)
-;;; doctest.el ends here
-
 ;;; doctest.el ends here
 
 ;; Local Variables:
