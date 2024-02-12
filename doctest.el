@@ -1,12 +1,12 @@
 ;;; doctest.el --- Doctests for Emacs Lisp -*- lexical-binding: t -*-
 
-;; Authors: Chris Rayner (dchrisrayner@gmail.com)
+;; Authors: Chris Rayner (dchrisrayner@gmail.com), Andrea (andrea-dev@hotmail.com) -- current maintainer
 ;; Created: Apr 8 2020
 ;; Keywords: lisp maint docs help
-;; URL: https://github.com/riscy/doctest
+;; URL: https://github.com/ag91/doctest
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;; Package-Requires: ((emacs "28.1"))
-;; Version: 0.0.0
+;; Version: 0.1.0
 
 ;;; Commentary:
 
