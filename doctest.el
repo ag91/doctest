@@ -138,7 +138,6 @@ determined by calling `narrow-to-defun'."
 (defun doctest--target-output ()
   "Read and return the target output on the current line.
 This is one or many lines beginning with `doctest-output'."
-  (message "%s" (point))
   (when (looking-at doctest-output)
     (doctest-unescape
      (let ((bound (save-excursion (or (ignore-errors (end-of-defun)) (end-of-line)) (point))))
