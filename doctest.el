@@ -241,8 +241,6 @@ When called interactively that would be the active region.
 (provide 'doctest)
 ;;; doctest.el ends here
 
-;;; doctest.el ends here
-
 ;; Local Variables:
 ;; byte-compile-warnings: (not docstrings)
 ;; End:
