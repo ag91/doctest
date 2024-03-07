@@ -104,7 +104,11 @@ normalized into its `princ' form without being evaluated."
                      (save-excursion (- (search-forward "(" nil t) 1))
                      (save-excursion (- (search-forward (concat "\n" doctest-output) nil t)
                                         (length doctest-output)))))))
-           (evaluated-input (format "%S" (eval (car (read-from-string input)))))
+           (evaluated-input (condition-case err
+                                (format "%S" (eval (car (read-from-string input))))
+                              (error
+                               (format "Failure evaluating input:\n\n%s\nwhich caused:\n%s\n\n" input err))))
+
            (output (and
                     (progn
                       (search-forward doctest-output nil t)
