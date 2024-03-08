@@ -106,8 +106,8 @@ normalized into its `princ' form without being evaluated."
                                         (length doctest-output)))))))
            (evaluated-input (condition-case err
                                 (format "%S" (eval (car (read-from-string input))))
-                              (error
-                               (format "Failure evaluating input:\n\n%s\nwhich caused:\n%s\n\n" input err))))
+                              (t
+                               (format "Failure in evaluating input caused:\n%s\n\n" err))))
 
            (output (and
                     (progn
@@ -168,7 +168,7 @@ Call `doctest--append' to append to the running test output."
   (cond ((not (string= actual-value target-value))
          (setq doctest--fail (1+ doctest--fail))
          (setq doctest--first-failure (or doctest--first-failure (point)))
-         (doctest--append (format "%s.el#%s: %s => %s but got %s"
+         (doctest--append (format "\n%s.el#%s: %s => %s but got %s"
                                   (or
                                    (ignore-errors (file-name-base (buffer-file-name)))
                                    (buffer-name))
