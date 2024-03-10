@@ -53,6 +53,14 @@
   :type 'symbol
   :group 'doctest)
 
+(defcustom doctest-message-level nil
+  "Print extra information.
+Info shows test info while running.
+Verbose shows also passing tests."
+  :type 'symbol
+  :group 'doctest
+  :options '(info verbose))
+
 (defun doctest (&optional filename)
   "Run doctest on current buffer, or FILENAME if given.
 When run interactively, the point will move to the site of the
@@ -74,7 +82,7 @@ This function sends its report using `send-string-to-terminal' if
   (let ((tally (format "%s passed, %s failed" doctest--pass doctest--fail)))
     (cond (doctest--first-failure
            (goto-char doctest--first-failure)
-           (doctest--message (format "%s\n%s" tally doctest--text)))
+           (doctest--message (format "%s\nTest run summary:\n%s" tally doctest--text)))
           (t (doctest--message tally)))))
 
 (defun doctest-byte-compile-warn ()
@@ -104,17 +112,18 @@ normalized into its `princ' form without being evaluated."
                      (save-excursion (- (search-forward "(" nil t) 1))
                      (save-excursion (- (search-forward (concat "\n" doctest-output) nil t)
                                         (length doctest-output)))))))
-           (evaluated-input (condition-case err
-                                (format "%S" (eval (car (read-from-string input))))
-                              (t
-                               (format "Failure in evaluating input caused:\n%s\n\n" err))))
+           (evaluated-input (string-trim
+                             (condition-case err
+                                 (format "%S" (eval (car (read-from-string input))))
+                               (t
+                                (format "Failure in evaluating input caused:\n%s\n\n" err)))))
 
            (output (and
                     (progn
                       (search-forward doctest-output nil t)
                       (not (beginning-of-line)))
                     (doctest--target-output)))
-           (output (format "%S" (car (read-from-string output)))))
+           (output (string-trim (format "%S" (car (read-from-string output))))))
       (if interactively
           (doctest--here-interactively input evaluated-input output)
         (doctest--here-noninteractively input evaluated-input output))))
@@ -168,13 +177,25 @@ Call `doctest--append' to append to the running test output."
   (cond ((not (string= actual-value target-value))
          (setq doctest--fail (1+ doctest--fail))
          (setq doctest--first-failure (or doctest--first-failure (point)))
-         (doctest--append (format "\n%s.el#%s: %s => %s but got %s"
-                                  (or
-                                   (ignore-errors (file-name-base (buffer-file-name)))
-                                   (buffer-name))
-                                  (line-number-at-pos)
-                                  sexp target-value actual-value)))
-        (t (setq doctest--pass (1+ doctest--pass)))))
+         (let ((output (format "%s.el#%s: %s => %s but got %s"
+                               (or
+                                (ignore-errors (file-name-base (buffer-file-name)))
+                                (buffer-name))
+                               (line-number-at-pos)
+                               sexp target-value actual-value)))
+           (when (equal 'info doctest-message-level) (doctest--message output))
+           (doctest--append output)))
+        (t
+         (let ((output (format "%s.el#%s: %s => %s passed"
+                               (or
+                                (ignore-errors (file-name-base (buffer-file-name)))
+                                (buffer-name))
+                               (line-number-at-pos)
+                               sexp target-value)))
+           (when (equal 'info doctest-message-level)
+             (doctest--message output))
+           (when (equal 'verbose doctest-message-level) (doctest--append (concat "\n" output))))
+         (setq doctest--pass (1+ doctest--pass)))))
 
 (defun doctest--reset-state ()
   "Reset doctest's current state."
