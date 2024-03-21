@@ -197,6 +197,15 @@ Call `doctest--append' to append to the running test output."
            (when (equal 'verbose doctest-message-level) (doctest--append (concat "\n" output))))
          (setq doctest--pass (1+ doctest--pass)))))
 
+(defun doctest-state ()
+  "Return the current state of test counts.
+Return alist (in no particular order) contains at least the
+following keys: `passed', `failed' and `total'."
+  ;; Exposing private values as a public function.
+  `((passed . ,doctest--pass)
+    (failed . ,doctest--fail)
+    (total  . ,(+ doctest--pass doctest--fail))))
+
 (defun doctest--reset-state ()
   "Reset doctest's current state."
   (when (eq major-mode 'emacs-lisp-mode) (eval-buffer))
