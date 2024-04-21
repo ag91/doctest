@@ -89,16 +89,31 @@ This function sends its report using `send-string-to-terminal' if
   (interactive)
   (when filename (set-buffer (find-file filename)))
   (doctest--reset-state)
+  (doctest--current-buffer (eq major-mode 'emacs-lisp-mode))
+  (doctest--after-tests))
+
+(defun doctest-files (files)
+  "Run doctest on all specified FILES (a list) in order.
+This function is meant rather for non-interactive use, so it
+won't reuse already open buffers.  It also won't evaluate them,
+so all the definitions used in the test must already be loaded.
+
+This function sends its report using `send-string-to-terminal' if
+`noninteractive' is non-nil, otherwise it simply uses `message'."
+  (doctest--reset-state)
+  (dolist (file files)
+    (with-temp-buffer
+      (insert-file-contents file)
+      (doctest--current-buffer nil)))
+  (doctest--after-tests))
+
+(defun doctest--current-buffer (eval-first)
+  (when eval-first
+    (eval-buffer))
   (save-excursion
     (goto-char (point-min))
     (while (ignore-errors (goto-char (doctest--next-test)))
-      (doctest-here)))
-  (run-hooks 'doctest-after-all-tests-hook)
-  (let ((tally (format "%s passed, %s failed" doctest--pass doctest--fail)))
-    (cond (doctest--first-failure
-           (goto-char doctest--first-failure)
-           (doctest--message (format "%s\nTest run summary:\n%s" tally doctest--text)))
-          (t (doctest--message tally)))))
+      (doctest-here))))
 
 (defun doctest-byte-compile-warn ()
   "Alert user of doctest that test cases in comments can cause byte compiler warnings."
@@ -229,7 +244,6 @@ following keys: `passed', `failed' and `total'."
 
 (defun doctest--reset-state ()
   "Reset doctest's current state."
-  (when (eq major-mode 'emacs-lisp-mode) (eval-buffer))
   (setq doctest--text nil
         doctest--fail 0
         doctest--pass 0
@@ -251,6 +265,15 @@ following keys: `passed', `failed' and `total'."
              (zerop (forward-line -1))
              (setq doctest-point (point)))))
     doctest-point))
+
+(defun doctest--after-tests ()
+  "Should be paired with `doctest--reset-state'."
+  (run-hooks 'doctest-after-all-tests-hook)
+  (let ((tally (format "%s passed, %s failed" doctest--pass doctest--fail)))
+    (cond (doctest--first-failure
+           (goto-char doctest--first-failure)
+           (doctest--message (format "%s\nTest run summary:\n%s" tally doctest--text)))
+          (t (doctest--message tally)))))
 
 (defun doctest--append (str)
   "Append STR to `doctest-text' with a newline if necessary."
