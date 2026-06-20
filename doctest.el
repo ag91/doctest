@@ -283,8 +283,8 @@ following keys: `passed', `failed' and `total'."
 
 (defun doctest--next-test ()
   "Return the point where the next test begins -- else nil.
->> (eq (doctest--next-test) (point))
-=> t"
+>> (doctest--next-test)
+=> :assert (or (> doctest-result (point)) (null doctest-result))"
   (declare (side-effect-free t))
   (let (doctest-point)
     (save-excursion
