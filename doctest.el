@@ -142,27 +142,45 @@ normalized into its `princ' form without being evaluated."
                      (save-excursion (- (search-forward "(" nil t) 1))
                      (save-excursion (- (search-forward (concat "\n" doctest-output) nil t)
                                         (length doctest-output)))))))
+           (user-output (and
+                         (progn
+                           ;; we go to the next output
+                           (search-forward doctest-output nil t)
+                           (not (beginning-of-line)))
+                         (doctest--target-output)))
+           ;; when user's expected output starts with :assert, we bind
+           ;; `doctest-result' and evaluate expression, asserting it
+           ;; must be non-nil
+           (assert-output-p (string-prefix-p ":assert" (string-trim user-output)))
            (evaluated-input (string-trim
                              (condition-case err
                                  (format "%S" (eval (car (read-from-string input))))
                                (t
-                                (format "Failure in evaluating input caused:\n%s\n\n" err)))))
+                                (if assert-output-p
+                                    (format "%S" (car err))
+                                  (format "Failure in evaluating input caused:\n%s\n\n" err))))))
 
-           (output (and
-                    (progn
-                      (search-forward doctest-output nil t)
-                      (not (beginning-of-line)))
-                    (doctest--target-output)))
-           (output (string-trim (format "%S" (car (read-from-string output)))))
-           (result (if (string= evaluated-input output) 'pass 'failure)))
+           (output (cond
+                    (assert-output-p
+                     ;; here we the output as lisp, because :assert is evaluating
+                     (eval `(let ((doctest-result ',(read evaluated-input)))
+                              ,(read (string-trim (nth 1 (string-split user-output ":assert")))))))
+                    ;; here we get a string for value comparison
+                    (t (string-trim (format "%S" (car (read-from-string user-output)))))))
+           (result (progn
+                     (cond
+                      ;; if it is an :assert, needs just to be thruthy
+                      ((and assert-output-p output) 'pass)
+                      ((string= evaluated-input output) 'pass)
+                      (t 'failure)))))
       (when doctest-after-every-test-functions
         (run-hook-with-args 'doctest-after-every-test-functions
                             `((result   . ,result)
-                              (expected . ,output)
+                              (expected . ,user-output)
                               (actual   . ,evaluated-input))))
       (if interactively
-          (doctest--here-interactively input evaluated-input output result)
-        (doctest--here-noninteractively input evaluated-input output result))))
+          (doctest--here-interactively input evaluated-input user-output result)
+        (doctest--here-noninteractively input evaluated-input user-output result))))
    (t (message "No doctest here."))))
 
 (defun doctest-defun ()
@@ -189,16 +207,25 @@ determined by calling `narrow-to-defun'."
 This is one or many lines beginning with `doctest-output'."
   (when (looking-at doctest-output)
     (doctest-unescape
-     (let ((bound (save-excursion (or (ignore-errors (end-of-defun)) (end-of-line)) (point))))
+     (let ((bound (save-excursion (or
+                                   ;; end of defun is the boundary for doctest
+                                   (end-of-defun)
+                                   ;; worst case scenarios
+                                   (end-of-line))
+                                  (point))))
        (buffer-substring-no-properties
         (+ (point) (length doctest-output))
         (or
-         (when (string-prefix-p (concat doctest-output "(") (thing-at-point 'line 'no-prop))
-           (save-excursion (search-forward ")\"" bound 'no-error)))
-         (save-excursion (and (re-search-forward doctest-input bound 'no-error) (beginning-of-line) (point)))
+         ;; we check first for newlines
          (save-excursion (ignore-errors (- (re-search-forward "\n\n" bound) (length "\n\n"))))
+         ;; or end of the docstring
          (save-excursion (ignore-errors (- (search-forward "\"\n " bound) (length "\"\n "))))
-         (save-excursion (ignore-errors (- (re-search-forward "\"" bound) 1)))))))))
+         (save-excursion (ignore-errors (- (re-search-forward "\"" bound) 1)))
+         ;; we end at the first `doctest-input'
+         (save-excursion (and (re-search-forward doctest-input bound 'no-error) (line-beginning-position)))
+         ;; we fallback ending at the first `doctest-output'
+         (save-excursion (and (re-search-forward doctest-output bound 'no-error) (line-beginning-position)))
+         ))))))
 
 (defun doctest--here-interactively (sexp actual-value target-value result)
   "Compare ACTUAL-VALUE (generated by SEXP) to TARGET-VALUE.

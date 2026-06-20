@@ -24,6 +24,32 @@
   - It encourages functions that are pure or at least side-effect-free
   - Your unit tests turn into documentation that your users can read!
 
+** Assertions
+:PROPERTIES:
+:ID:       13db70cb-f6c0-4fcc-9bf1-fb07da59fc8f
+:END:
+
+Sometimes you may want to test side effects or that a function throws
+error. This is possible by using the =:assert= keyword. When used, the
+test will pass when the form evaluates *to any truthy value*.
+
+#+begin_src elisp
+(defun div (a b)
+  "
+>> (div 1 1)
+=> 1
+
+>> (div 1 0)
+=> :assert (equal doctest-result 'arith-error)
+>> (div 1 1)
+=> :assert (equal doctest-result 1)
+"
+  (/ a b))
+#+end_src
+
+When the keyword is defined, the special symbol =doctest-result= will
+contain evaluated input (in case of error, the error symbol).
+
 * Usage
   - Use ~M-x doctest~ to run doctests on an entire buffer.
   - Use ~M-x doctest-here~ to run the doctest on the current line.
