@@ -164,15 +164,20 @@ normalized into its `princ' form without being evaluated."
                     (assert-output-p
                      ;; here we the output as lisp, because :assert is evaluating
                      (eval `(let ((doctest-result ',(read evaluated-input)))
-                              ,(read (string-trim (nth 1 (string-split user-output ":assert")))))))
+                              ,(read (string-trim
+                                      (substring
+                                       (string-trim user-output)
+                                       (length ":assert")
+                                       (length (string-trim user-output))))))))
                     ;; here we get a string for value comparison
                     (t (string-trim (format "%S" (car (read-from-string user-output)))))))
-           (result (progn
-                     (cond
-                      ;; if it is an :assert, needs just to be thruthy
-                      ((and assert-output-p output) 'pass)
-                      ((string= evaluated-input output) 'pass)
-                      (t 'failure)))))
+           (result (cond
+                    ;; if it is an :assert, needs just to be thruthy
+                    ((and assert-output-p output) (progn
+                                                    (message "%s" output)
+                                                    'pass))
+                    ((and (string= evaluated-input output) (not assert-output-p)) 'pass)
+                    (t 'failure))))
       (when doctest-after-every-test-functions
         (run-hook-with-args 'doctest-after-every-test-functions
                             `((result   . ,result)
